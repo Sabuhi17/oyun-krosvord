@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+<meta charset="UTF-8">
+<title>Krasvord Oyunu</title>
+
+<style>
+body{
+    font-family: Arial;
+    background: linear-gradient(135deg,#1e3c72,#2a5298);
+    color:white;
+    text-align:center;
+}
+
+h1{ margin-top:20px; }
+
+#startScreen{ margin-top:100px; }
+
+input, button{
+    padding:10px;
+    font-size:16px;
+    border-radius:8px;
+    border:none;
+}
+
+button{
+    background:#ffcc00;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+#game{ display:none; }
+
+.info{
+    margin:15px;
+    font-size:18px;
+}
+
+.grid{
+    display:grid;
+    grid-template-columns: repeat(15,40px);
+    justify-content:center;
+    gap:3px;
+}
+
+.cell{
+    width:40px;
+    height:40px;
+    text-align:center;
+    font-size:20px;
+    text-transform:lowercase;
+    border-radius:5px;
+}
+
+.block{ background:black; }
+
+.correct{
+    background:#4CAF50 !important;
+    color:white;
+}
+
+.wrong{
+    background:red !important;
+}
+
+</style>
+</head>
+<body>
+
+<h1>🧩 Krasvord Oyunu</h1>
+
+<div id="startScreen">
+    <input type="text" id="nickname" placeholder="Nick name daxil et">
+    <button onclick="startGame()">Başla</button>
+</div>
+
+<div id="game">
+<div class="info">
+    Oyunçu: <span id="player"></span> |
+    Xal: <span id="score">0</span> |
+    Səhv: <span id="mistakes">0</span>/3 |
+    Vaxt: <span id="timer">05:00</span>
+</div>
+
+<div class="grid" id="grid"></div>
+</div>
+
+<script>
+
+const crossword = [
+"###nəzəri#####",
+"###e##########",
+"###m##########",
+"kəmiyyət######",
+"###r#####etika",
+"###i##########",
+"keyfiyyət#####",
+"#####təsvir###",
+"####izah######",
+"###müqayisə###",
+"##plagiat#####",
+"######sitat###",
+"####xülasə####",
+"###parafraz###",
+"##############"
+];
+
+const words = [
+"nəzəri","emprik","kəmiyyət","keyfiyyət",
+"etika","təsvir","izah","müqayisə",
+"plagiat","sitat","xülasə","parafraz"
+];
+
+let mistakes = 0;
+let score = 0;
+let timeLeft = 300;
+let solvedWords = new Set();
+let timerInterval;
+
+function startGame(){
+    const nickname = document.getElementById("nickname").value.trim();
+    if(nickname===""){
+        alert("Nick name daxil et!");
+        return;
+    }
+
+    document.getElementById("player").innerText = nickname;
+    document.getElementById("startScreen").style.display="none";
+    document.getElementById("game").style.display="block";
+
+    createGrid();
+    startTimer();
+}
+
+function createGrid(){
+    const grid = document.getElementById("grid");
+    grid.innerHTML="";
+
+    crossword.forEach((row,rowIndex)=>{
+        row.split("").forEach((letter,colIndex)=>{
+            if(letter=="#"){
+                const div=document.createElement("div");
+                div.classList.add("cell","block");
+                grid.appendChild(div);
+            }else{
+                const input=document.createElement("input");
+                input.maxLength=1;
+                input.classList.add("cell");
+                input.dataset.letter=letter;
+                input.dataset.row=rowIndex;
+                input.dataset.col=colIndex;
+                input.addEventListener("input",checkLetter);
+                grid.appendChild(input);
+            }
+        });
+    });
+}
+
+function checkLetter(e){
+    const input=e.target;
+    const correct=input.dataset.letter;
+
+    if(input.value.toLowerCase()===correct){
+        input.classList.add("correct");
+        input.disabled=true;
+        checkAllWords();
+    }else{
+        input.classList.add("wrong");
+        setTimeout(()=>input.classList.remove("wrong"),300);
+        input.value="";
+        mistakes++;
+        document.getElementById("mistakes").innerText=mistakes;
+
+        if(mistakes>=3){
+            endGame("❌ Game Over! 3 səhv etdiniz.");
+        }
+    }
+}
+
+function checkAllWords(){
+    words.forEach(word=>{
+        if(!solvedWords.has(word)){
+            if(isWordSolved(word)){
+                solvedWords.add(word);
+                score+=10;
+                document.getElementById("score").innerText=score;
+            }
+        }
+    });
+
+    if(score===words.length*10){
+        endGame("🏆 Təbriklər! Bütün sözləri tapdunuz!");
+    }
+}
+
+function isWordSolved(word){
+    let letters = word.split("");
+    let foundLetters = 0;
+
+    document.querySelectorAll(".cell").forEach(cell=>{
+        if(cell.dataset.letter && letters.includes(cell.dataset.letter) && cell.disabled){
+            foundLetters++;
+        }
+    });
+
+    return foundLetters >= letters.length;
+}
+
+function startTimer(){
+    timerInterval=setInterval(()=>{
+        timeLeft--;
+        let minutes=Math.floor(timeLeft/60);
+        let seconds=timeLeft%60;
+
+        document.getElementById("timer").innerText=
+        `${minutes.toString().padStart(2,"0")}:${seconds.toString().padStart(2,"0")}`;
+
+        if(timeLeft<=0){
+            clearInterval(timerInterval);
+            endGame("⏰ Vaxt bitdi!");
+        }
+
+    },1000);
+}
+
+function endGame(message){
+    clearInterval(timerInterval);
+    alert(message);
+    location.reload();
+}
+
+</script>
+
+</body>
+</html>
